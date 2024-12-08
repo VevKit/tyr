@@ -1,0 +1,15 @@
+{
+  "name": "@vevkit/tyr",
+  "version": "1.0.0",
+  "description": "Server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.18",
+    "typescript": "^5.5.4"
+  },
+  "author": "Jesse Dahl",
+  "license": "ISC"
+}

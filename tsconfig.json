@@ -1,0 +1,82 @@
+{
+  // Specify ECMAScript target version
+  // We choose ES2020 for broad compatibility while enabling modern features
+  "compilerOptions": {
+    "target": "ES2020",
+    
+    // Specify module code generation
+    // ESNext allows us to use the latest module syntax
+    "module": "ESNext",
+    
+    // Specify library files to include
+    // These provide type definitions for built-in JavaScript features
+    "lib": ["ES2020"],
+    
+    // Output directory for compiled files
+    "outDir": "./dist",
+    
+    // Include source maps for better debugging
+    "sourceMap": true,
+    
+    // Enable strict type checking
+    // This helps catch errors early and improves code quality
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    "alwaysStrict": true,
+    
+    // Module resolution settings
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    
+    // Additional checks for better code quality
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    
+    // Enable decorator support (if needed for future features)
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    
+    // Path aliases for cleaner imports
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@middleware/*": ["src/middleware/*"],
+      "@utils/*": ["src/utils/*"]
+    },
+    
+    // Skip type checking of declaration files
+    "skipLibCheck": true,
+    
+    // Ensure each file can be safely transpiled without relying on other imports
+    "isolatedModules": true,
+    
+    // Generate declaration files
+    "declaration": true,
+    "declarationMap": true,
+    "declarationDir": "./dist/types"
+  },
+  
+  // Specify files to include in compilation
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  
+  // Specify files to exclude from compilation
+  "exclude": [
+    "node_modules",
+    "dist",
+    "examples"
+  ]
+}
