@@ -11,13 +11,15 @@ import { ServerRequest } from './request';
 import { ServerResponse } from './response';
 import { NotFoundError, TyrError } from './errors';
 import { Router } from './router';
+import { MiddlewareChain } from './middleware';
 
 export class Server {
   private httpServer = createServer((req, res) => this.handleRequest(req, res));
   private router = new Router();
   private routes = new Map<string, Map<HttpMethod, Route>>();
   private errorHandlers: ErrorHandler[] = [];
-  private globalMiddleware: MiddlewareHandler[] = [];
+  private globalMiddleware = new MiddlewareChain();
+  private routeMiddleware = new Map<string, MiddlewareChain>();
 
   constructor(private config: ServerConfig = {}) {
     this.config = {
@@ -30,6 +32,20 @@ export class Server {
 
     // Set default error handler
     this.onError(this.defaultErrorHandler.bind(this));
+  }
+
+  // Add global middleware
+  public use(handler: MiddlewareHandler): this {
+    this.globalMiddleware.use(handler);
+    return this;
+  }
+
+  // Add route-specific middleware
+  public useRoute(path: string, handler: MiddlewareHandler): this {
+    const chain = this.routeMiddleware.get(path) ?? new MiddlewareChain();
+    chain.use(handler);
+    this.routeMiddleware.set(path, chain);
+    return this;
   }
 
   // Public API Methods
@@ -53,11 +69,6 @@ export class Server {
 
   public patch(path: string, handler: RequestHandler): this {
     return this.addRoute('PATCH', path, handler);
-  }
-
-  public use(middleware: MiddlewareHandler): this {
-    this.globalMiddleware.push(middleware);
-    return this;
   }
 
   public onError(handler: ErrorHandler): this {
@@ -112,8 +123,12 @@ export class Server {
     const res = this.createResponse(rawRes);
   
     try {
+      // Execute global middleware first
+      await this.globalMiddleware.execute(req, res);
+      
+      if (res.sent) return; // Stop if middleware sent response
 
-      // Find matching route with parameters
+      // Find matching route
       const result = this.router.findRoute(
         req.method as HttpMethod,
         req.path
@@ -126,14 +141,15 @@ export class Server {
       // Add params to request
       req.params = result.params;
 
-      // Create middleware chain
-      const middlewareChain = [
-        ...this.globalMiddleware,
-        result.route.handler
-      ];
+      // Execute route-specific middleware
+      const routeChain = this.routeMiddleware.get(result.route.path);
+      if (routeChain) {
+        await routeChain.execute(req, res);
+        if (res.sent) return;
+      }
 
-      // Execute middleware chain
-      await this.executeMiddlewareChain(middlewareChain, req, res);
+      // Execute route handler
+      await result.route.handler(req, res);
 
       if (!res.sent) {
         throw new TyrError('No response sent by handler');
