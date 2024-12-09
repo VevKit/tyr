@@ -174,6 +174,36 @@ server.get('/protected',
 );
 ```
 
+### Security Headers
+
+```typescript
+server.use(securityHeaders());
+
+// Custom configuration
+server.use(securityHeaders({
+  hsts: {
+    enabled: true,
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  },
+  csp: {
+    enabled: true,
+    directives: {
+      'default-src': ["'self'"],
+      'script-src': ["'self'", "'unsafe-inline'"],
+      'style-src': ["'self'", "'unsafe-inline'"],
+      'img-src': ["'self'", 'data:', 'https:'],
+      'connect-src': ["'self'", 'https://api.example.com']
+    }
+  },
+  // Disable features you don't need
+  xssFilter: {
+    enabled: false
+  }
+}));
+```
+
 ## Advanced Configuration
 
 ### Body Parser Options
