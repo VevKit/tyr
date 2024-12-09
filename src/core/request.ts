@@ -1,3 +1,5 @@
+// src/core/request.ts
+
 import { IncomingMessage } from 'node:http';
 import { parse as parseUrl } from 'node:url';
 import { ParsedUrlQuery, parse as parseQuery } from 'node:querystring';
@@ -6,7 +8,7 @@ export class ServerRequest {
   public params: Record<string, string> = {};
   public query: ParsedUrlQuery;
   public path: string;
-  private _body: unknown;
+  public body: unknown;
   private bodyParsed = false;
 
   constructor(private raw: IncomingMessage) {
@@ -16,7 +18,6 @@ export class ServerRequest {
     this.query = parsed.query;
   }
 
-  // Provide easy access to common request properties
   get method(): string {
     return this.raw.method || 'GET';
   }
@@ -25,28 +26,27 @@ export class ServerRequest {
     return this.raw.headers;
   }
 
-  // Lazy body parsing - only parse when needed
+  // Method to parse and get body
   public async getBody<T = unknown>(): Promise<T> {
     if (this.bodyParsed) {
-      return this._body as T;
+      return this.body as T;
     }
 
     const contentType = this.headers['content-type'];
     
-    // Choose parser based on content-type
     if (contentType?.includes('application/json')) {
-      this._body = await this.parseJson();
+      this.body = await this.parseJson();
     } else if (contentType?.includes('application/x-www-form-urlencoded')) {
-      this._body = await this.parseUrlEncoded();
+      this.body = await this.parseUrlEncoded();
     } else if (contentType?.includes('text/plain')) {
-      this._body = await this.parseText();
+      this.body = await this.parseText();
     } else {
       // For unknown content types, return raw body
-      this._body = await this.getRawBody();
+      this.body = await this.getRawBody();
     }
 
     this.bodyParsed = true;
-    return this._body as T;
+    return this.body as T;
   }
 
   private async parseJson(): Promise<unknown> {

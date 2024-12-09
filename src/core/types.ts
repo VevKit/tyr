@@ -145,3 +145,42 @@ export function isErrorHandler(handler: Handler): handler is ErrorHandler {
 export function isMiddlewareHandler(handler: Handler): handler is MiddlewareHandler {
   return handler.length === 3;
 }
+
+
+export interface CorsOptions {
+  // Configures the Access-Control-Allow-Origin CORS header
+  origin?: string | boolean;
+  
+  // Configures the Access-Control-Allow-Methods CORS header
+  methods?: string | string[];
+  
+  // Configures the Access-Control-Allow-Headers CORS header
+  headers?: string | string[];
+  
+  // Configures the Access-Control-Allow-Credentials CORS header
+  credentials?: boolean;
+  
+  // Configures the Access-Control-Expose-Headers CORS header
+  exposeHeaders?: string | string[];
+  
+  // Configures the Access-Control-Max-Age CORS header
+  maxAge?: number;
+  
+  // Enable or disable CORS preflight
+  preflightContinue?: boolean;
+  
+  // Provides a status code to use for successful OPTIONS requests
+  optionsSuccessStatus?: number;
+}
+
+// Helper type for normalizing CORS values
+export type NormalizedCorsOptions = {
+  origin: string | boolean;
+  methods: string;
+  headers: string;
+  credentials: boolean;
+  exposeHeaders: string;
+  maxAge: number;
+  preflightContinue: boolean;
+  optionsSuccessStatus: number;
+};
