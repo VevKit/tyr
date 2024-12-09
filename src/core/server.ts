@@ -9,10 +9,12 @@ import type {
 } from './types';
 import { ServerRequest } from './request';
 import { ServerResponse } from './response';
-import { TyrError } from './errors';
+import { NotFoundError, TyrError } from './errors';
+import { Router } from './router';
 
 export class Server {
   private httpServer = createServer((req, res) => this.handleRequest(req, res));
+  private router = new Router();
   private routes = new Map<string, Map<HttpMethod, Route>>();
   private errorHandlers: ErrorHandler[] = [];
   private globalMiddleware: MiddlewareHandler[] = [];
@@ -32,11 +34,13 @@ export class Server {
 
   // Public API Methods
   public get(path: string, handler: RequestHandler): this {
-    return this.addRoute('GET', path, handler);
+    this.router.addRoute('GET', this.normalizePath(path), handler);
+    return this;
   }
 
   public post(path: string, handler: RequestHandler): this {
-    return this.addRoute('POST', path, handler);
+    this.router.addRoute('POST', this.normalizePath(path), handler);
+    return this;
   }
 
   public put(path: string, handler: RequestHandler): this {
@@ -104,28 +108,33 @@ export class Server {
   }
 
   private async handleRequest(rawReq: IncomingMessage, rawRes: NodeServerResponse): Promise<void> {
-    // Create our enhanced request and response objects
     const req = await this.createRequest(rawReq);
     const res = this.createResponse(rawRes);
-
+  
     try {
-      // Find matching route
-      const route = this.findRoute(req.method as HttpMethod, req.path);
 
-      if (!route) {
-        throw new TyrError('Not Found', 404);
+      // Find matching route with parameters
+      const result = this.router.findRoute(
+        req.method as HttpMethod,
+        req.path
+      );
+
+      if (!result) {
+        throw new NotFoundError(`No route found for ${req.method} ${req.path}`);
       }
+
+      // Add params to request
+      req.params = result.params;
 
       // Create middleware chain
       const middlewareChain = [
         ...this.globalMiddleware,
-        route.handler
+        result.route.handler
       ];
 
       // Execute middleware chain
       await this.executeMiddlewareChain(middlewareChain, req, res);
 
-      // Ensure response was sent
       if (!res.sent) {
         throw new TyrError('No response sent by handler');
       }
