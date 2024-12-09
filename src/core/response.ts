@@ -2,12 +2,16 @@ import { ServerResponse as NodeServerResponse } from 'node:http';
 import { SendFileOptions } from './types';
 
 export class ServerResponse {
-  private sent = false;
+  private _sent = false;
   private headers: Record<string, string | number | string[]> = {};
 
   constructor(private raw: NodeServerResponse) {
     // Set sensible defaults
     this.header('Content-Type', 'application/json');
+  }
+
+  get sent(): boolean {
+    return this._sent;
   }
 
   // Status code setting with chainable API
@@ -28,7 +32,7 @@ export class ServerResponse {
     this.checkSent();
     this.header('Content-Type', 'application/json');
     this.raw.end(JSON.stringify(data));
-    this.sent = true;
+    this._sent = true;
   }
 
   // Send plain text response
@@ -36,7 +40,7 @@ export class ServerResponse {
     this.checkSent();
     this.header('Content-Type', 'text/plain');
     this.raw.end(data);
-    this.sent = true;
+    this._sent = true;
   }
 
   // Redirect to another URL
@@ -45,7 +49,7 @@ export class ServerResponse {
     this.header('Location', url);
     this.status(code);
     this.raw.end();
-    this.sent = true;
+    this._sent = true;
   }
 
   // Send a file (basic implementation)

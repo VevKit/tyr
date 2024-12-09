@@ -1,4 +1,5 @@
 // src/core/types.ts
+import { TyrError } from './errors';
 import { ServerRequest } from './request';
 import { ServerResponse } from './response';
 
@@ -63,7 +64,7 @@ export interface RequestHandler {
 }
 
 export interface ErrorHandler {
-  (error: Error, req: ServerRequest, res: ServerResponse): void | Promise<void>;
+  (error: TyrError, req: ServerRequest, res: ServerResponse): void | Promise<void>;
 }
 
 export interface MiddlewareHandler {
@@ -92,18 +93,6 @@ export interface SendFileOptions {
   lastModified?: boolean;
   headers?: Record<string, string>;
   dotfiles?: 'allow' | 'deny' | 'ignore';
-}
-
-// Error Types
-export class TyrError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number = 500,
-    public details?: unknown
-  ) {
-    super(message);
-    this.name = 'TyrError';
-  }
 }
 
 // Cookie Types
