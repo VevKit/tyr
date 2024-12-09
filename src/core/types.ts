@@ -2,6 +2,31 @@
 import { TyrError } from './errors';
 import { ServerRequest } from './request';
 import { ServerResponse } from './response';
+import type { 
+  JsonParserOptions, 
+  UrlEncodedParserOptions, 
+  RawParserOptions, 
+  TextParserOptions,
+  MultipartParserOptions 
+} from '../middleware/body-parser/types';
+
+// Server Configuration
+export interface ServerConfig {
+  port?: number;
+  host?: string;
+  bodyParser?: boolean | BodyParserOptions;
+  trustProxy?: boolean;
+  timeout?: number;
+}
+
+// Body Parser Options for Server Config
+export interface BodyParserOptions {
+  json?: boolean | JsonParserOptions;
+  urlencoded?: boolean | UrlEncodedParserOptions;
+  raw?: boolean | RawParserOptions;
+  text?: boolean | TextParserOptions;
+  multipart?: boolean | MultipartParserOptions;
+}
 
 // HTTP Method Types
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
@@ -21,28 +46,6 @@ export interface BodyParserOptions {
   urlencoded?: boolean | UrlEncodedParserOptions;
   raw?: boolean | RawParserOptions;
   text?: boolean | TextParserOptions;
-}
-
-export interface JsonParserOptions {
-  limit?: string | number;
-  strict?: boolean;
-  reviver?: (key: string, value: any) => any;
-}
-
-export interface UrlEncodedParserOptions {
-  limit?: string | number;
-  extended?: boolean;
-}
-
-export interface RawParserOptions {
-  limit?: string | number;
-  type?: string | string[];
-}
-
-export interface TextParserOptions {
-  limit?: string | number;
-  type?: string | string[];
-  defaultCharset?: string;
 }
 
 // Request Types
@@ -184,3 +187,18 @@ export type NormalizedCorsOptions = {
   preflightContinue: boolean;
   optionsSuccessStatus: number;
 };
+
+export interface MultipartFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  buffer?: Buffer;
+  size: number;
+  stream?: NodeJS.ReadableStream;
+}
+
+export interface MultipartField {
+  fieldname: string;
+  value: string;
+}

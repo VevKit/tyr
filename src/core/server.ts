@@ -1,17 +1,19 @@
 import { createServer, IncomingMessage, ServerResponse as NodeServerResponse } from 'node:http';
-import type { 
-  ServerConfig, 
-  HttpMethod, 
-  RequestHandler, 
-  ErrorHandler,
-  MiddlewareHandler,
-  Route
-} from './types';
+import type { ServerConfig, BodyParserOptions, Route, HttpMethod, ErrorHandler, RequestHandler, MiddlewareHandler } from './types';
 import { ServerRequest } from './request';
 import { ServerResponse } from './response';
 import { NotFoundError, TyrError } from './errors';
 import { Router } from './router';
 import { MiddlewareChain } from './middleware';
+import { registry as parserRegistry } from '../middleware/body-parser';
+import { 
+  JsonParser, 
+  UrlEncodedParser, 
+  TextParser, 
+  RawParser, 
+  MultipartParser 
+} from '../middleware/body-parser';
+import { parseBytes } from '@/utils/parseBytes';
 
 export class Server {
   private httpServer = createServer((req, res) => this.handleRequest(req, res));
@@ -32,6 +34,109 @@ export class Server {
 
     // Set default error handler
     this.onError(this.defaultErrorHandler.bind(this));
+
+    // Configure body parsers based on config
+    this.configureBodyParsers(this.config.bodyParser);
+  }
+
+  private configureBodyParsers(config: boolean | BodyParserOptions = true): void {
+    parserRegistry.clear();
+
+    if (config === false) {
+      return;
+    }
+
+    // Default parser options with numeric limits
+    const defaultOptions = {
+      json: { limit: parseBytes('1mb') },
+      urlencoded: { limit: parseBytes('1mb'), extended: true },
+      raw: { limit: parseBytes('1mb') },
+      text: { limit: parseBytes('1mb') },
+      multipart: { 
+        maxFileSize: parseBytes('10mb'),
+        maxFields: 1000
+      }
+    };
+
+    const options = config === true ? defaultOptions : {
+      ...defaultOptions,
+      ...(typeof config === 'object' ? this.normalizeParserOptions(config) : {})
+    };
+
+    // Register parsers based on configuration
+    if (options.json) {
+      parserRegistry.registerParser(
+        new JsonParser(typeof options.json === 'boolean' ? {} : options.json)
+      );
+    }
+
+    if (options.urlencoded) {
+      parserRegistry.registerParser(
+        new UrlEncodedParser(typeof options.urlencoded === 'boolean' ? {} : options.urlencoded)
+      );
+    }
+
+    if (options.raw) {
+      parserRegistry.registerParser(
+        new RawParser(typeof options.raw === 'boolean' ? {} : options.raw)
+      );
+    }
+
+    if (options.text) {
+      parserRegistry.registerParser(
+        new TextParser(typeof options.text === 'boolean' ? {} : options.text)
+      );
+    }
+
+    if (options.multipart) {
+      parserRegistry.registerParser(
+        new MultipartParser(typeof options.multipart === 'boolean' ? {} : options.multipart)
+      );
+    }
+  }
+
+  private normalizeParserOptions(config: BodyParserOptions) {
+    const normalized: Record<string, any> = {};
+
+    if (config.json) {
+      normalized.json = typeof config.json === 'boolean' ? {} : {
+        ...config.json,
+        limit: typeof config.json.limit === 'string' ? parseBytes(config.json.limit) : config.json.limit
+      };
+    }
+
+    if (config.urlencoded) {
+      normalized.urlencoded = typeof config.urlencoded === 'boolean' ? {} : {
+        ...config.urlencoded,
+        limit: typeof config.urlencoded.limit === 'string' ? parseBytes(config.urlencoded.limit) : config.urlencoded.limit
+      };
+    }
+
+    if (config.raw) {
+      normalized.raw = typeof config.raw === 'boolean' ? {} : {
+        ...config.raw,
+        limit: typeof config.raw.limit === 'string' ? parseBytes(config.raw.limit) : config.raw.limit
+      };
+    }
+
+    if (config.text) {
+      normalized.text = typeof config.text === 'boolean' ? {} : {
+        ...config.text,
+        limit: typeof config.text.limit === 'string' ? parseBytes(config.text.limit) : config.text.limit
+      };
+    }
+
+    if (config.multipart) {
+      normalized.multipart = typeof config.multipart === 'boolean' ? {} : {
+        ...config.multipart,
+        maxFileSize: typeof config.multipart.maxFileSize === 'string' ? 
+          parseBytes(config.multipart.maxFileSize) : config.multipart.maxFileSize,
+        maxFieldSize: typeof config.multipart.maxFieldSize === 'string' ? 
+          parseBytes(config.multipart.maxFieldSize) : config.multipart.maxFieldSize
+      };
+    }
+
+    return normalized;
   }
 
   // Add global middleware
