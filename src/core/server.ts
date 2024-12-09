@@ -1,4 +1,5 @@
 // src/core/server.ts
+import { ServerConfig, RequestHandler, ErrorHandler, HttpMethod } from './types';
 export class Server {
   private config: ServerConfig;
   private errorHandlers: ErrorHandler[] = [];

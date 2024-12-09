@@ -1,4 +1,5 @@
 import { ServerResponse as NodeServerResponse } from 'node:http';
+import { SendFileOptions } from './types';
 
 export class ServerResponse {
   private sent = false;
